@@ -3,8 +3,8 @@ module Wechat
     extend ActiveSupport::Concern
 
     included do 
-      self.skip_before_filter :verify_authenticity_token
-      self.before_filter :verify_signature, only: [:show, :create]
+      self.skip_before_action :verify_authenticity_token
+      self.before_action :verify_signature, only: [:show, :create]
       #delegate :wehcat, to: :class
     end
 
@@ -70,9 +70,8 @@ module Wechat
       end
     end
 
-    
     def show
-      render :text => params[:echostr]
+      render :plain => params[:echostr]
     end
 
     def create
@@ -95,13 +94,12 @@ module Wechat
     private
     def verify_signature
       array = [self.class.token, params[:timestamp], params[:nonce]].compact.collect(&:to_s).sort
-      render :text => "Forbidden", :status => 403 if params[:signature] != Digest::SHA1.hexdigest(array.join)
+      render :plain => "Forbidden", :status => 403 if params[:signature] != Digest::SHA1.hexdigest(array.join)
     end
 
-    private
     def post_xml
       data = Hash.from_xml(request.raw_post)
-      HashWithIndifferentAccess.new_from_hash_copying_default data.fetch('xml', {})
+      HashWithIndifferentAccess.new data.fetch('xml', {})
     end
   end
 end
